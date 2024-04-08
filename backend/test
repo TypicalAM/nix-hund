@@ -1,0 +1,79 @@
+{
+  "root": {
+    "entries": {
+      "nix-support": {
+        "entries": {
+          "setup-hook": {
+            "narOffset": 384,
+            "size": 417,
+            "type": "regular"
+          }
+        },
+        "type": "directory"
+      },
+      "share": {
+        "entries": {
+          "emacs": {
+            "entries": {
+              "native-lisp": {
+                "entries": {
+                  "28.2-439a32cd": {
+                    "entries": {
+                      "terraform-doc-c2963723-119cedf4.eln": {
+                        "executable": true,
+                        "narOffset": 1648,
+                        "size": 38368,
+                        "type": "regular"
+                      }
+                    },
+                    "type": "directory"
+                  }
+                },
+                "type": "directory"
+              },
+              "site-lisp": {
+                "entries": {
+                  "elpa": {
+                    "entries": {
+                      "terraform-doc-20230521.849": {
+                        "entries": {
+                          "terraform-doc-autoloads.el": {
+                            "narOffset": 40728,
+                            "size": 681,
+                            "type": "regular"
+                          },
+                          "terraform-doc-pkg.el": {
+                            "narOffset": 41616,
+                            "size": 357,
+                            "type": "regular"
+                          },
+                          "terraform-doc.el": {
+                            "narOffset": 42168,
+                            "size": 10072,
+                            "type": "regular"
+                          },
+                          "terraform-doc.elc": {
+                            "narOffset": 52440,
+                            "size": 10321,
+                            "type": "regular"
+                          }
+                        },
+                        "type": "directory"
+                      }
+                    },
+                    "type": "directory"
+                  }
+                },
+                "type": "directory"
+              }
+            },
+            "type": "directory"
+          }
+        },
+        "type": "directory"
+      }
+    },
+    "type": "directory"
+  },
+  "version": 1
+}
