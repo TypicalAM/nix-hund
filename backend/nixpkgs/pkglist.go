@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"net/http"
 	"os"
 	"os/exec"
 	"slices"
@@ -22,8 +21,8 @@ const APP_NAME = "nix-hund"
 
 var ErrNoCache = errors.New("no adequate cache")
 
-// Info is the information about an available nixpkgs derivation.
-type Info struct {
+// info is the information about an available nixpkgs derivation.
+type info struct {
 	Name       string               `json:"name"`
 	OutputName string               `json:"outputName"`
 	Outputs    map[string]StorePath `json:"outputs"`
@@ -32,14 +31,14 @@ type Info struct {
 	Version    string               `json:"version"`
 }
 
-// List is the nixpkgs package list.
-type List map[string]Info
+// list is the nixpkgs package list.
+type list map[string]info
 
 // Pkgs is the package list fetcher
 type Pkgs struct {
 	CacheURL string
-	List     List
-	Fetcher  *http.Client
+	List     list
+	Fetcher  *retryhttp.Client
 }
 
 // New reads or fetches the available packages from nixpkgs. It uses the default system channel and the cache url provided by the caller.
@@ -47,14 +46,14 @@ func New(url string) (*Pkgs, error) {
 	cli := retryhttp.NewClient()
 	cli.RetryMax = 5
 	cli.Backoff = retryhttp.LinearJitterBackoff
-	cli.Logger = log.New(io.Discard) // Why is it shouting so much, shut up!
+	cli.Logger = log.New(io.Discard)
 
 	list, err := listFromCache()
 	if err == nil {
 		return &Pkgs{
 			CacheURL: url,
 			List:     list,
-			Fetcher:  cli.StandardClient(),
+			Fetcher:  cli,
 		}, nil
 	}
 
@@ -66,7 +65,7 @@ func New(url string) (*Pkgs, error) {
 	return &Pkgs{
 		CacheURL: url,
 		List:     list,
-		Fetcher:  cli.StandardClient(),
+		Fetcher:  cli,
 	}, nil
 }
 
@@ -83,8 +82,8 @@ type RawListing struct {
 	Count      int
 }
 
-// ProcessedListing is a listing broken down into individual files.
-type ProcessedListing struct {
+// Listing is a listing broken down into individual files.
+type Listing struct {
 	PkgName    string
 	OutputName string
 	Files      []string
@@ -103,27 +102,6 @@ func (pkgs *Pkgs) CountDev() int {
 	}
 
 	return total
-}
-
-// CreateIndex takes all the queried packages and fetches file listings for them.
-func (pkgs *Pkgs) CreateIndex() error {
-	log.Info("Creating index")
-
-	for elem := range pkgs.ProcessListings(pkgs.FetchListings(pkgs.Count())) {
-		log.Info("Package", "name", elem.PkgName, "outname", elem.OutputName, "size", len(elem.Files))
-	}
-
-	return nil
-}
-
-func counts[T any](slice []T, f func(checked T) bool) int {
-	count := 0
-	for _, s := range slice {
-		if f(s) {
-			count++
-		}
-	}
-	return count
 }
 
 // FetchListings fetches listings for all files.
@@ -152,13 +130,14 @@ func (pkgs *Pkgs) FetchListings(total int) chan RawListing {
 
 // fetchPackage fetches a raw file listing.
 func (pkgs *Pkgs) fetchPackage(pkgName string, sp StorePath, outname string, total int, doneCount *atomic.Int64, listings chan RawListing) {
-	data, err := sp.FetchListing(pkgs.CacheURL, pkgs.Fetcher)
+	data, err := sp.FetchListing(pkgs.CacheURL, pkgs.Fetcher.StandardClient())
 	doneCount.Store(doneCount.Add(1))
 	if err != nil {
 		if doneCount.Load() == int64(total) {
 			log.Info("Done fetching", "pkgs", total)
 			close(listings)
 		}
+
 		log.Error("Failed to fetch listing", "name", pkgName, "err", err)
 		return
 	}
@@ -177,8 +156,8 @@ func (pkgs *Pkgs) fetchPackage(pkgName string, sp StorePath, outname string, tot
 }
 
 // ProcessListings processes a channel of packages into resolved file listings.
-func (pkgs *Pkgs) ProcessListings(rawPkgs chan RawListing) chan ProcessedListing {
-	result := make(chan ProcessedListing)
+func (pkgs *Pkgs) ProcessListings(rawPkgs chan RawListing) chan Listing {
+	result := make(chan Listing)
 
 	go func() {
 		for raw := range rawPkgs {
@@ -191,14 +170,14 @@ func (pkgs *Pkgs) ProcessListings(rawPkgs chan RawListing) chan ProcessedListing
 }
 
 // processInfo resolves the raw listing info to a filelist, and saves it to disk.
-func (pkgs *Pkgs) processInfo(raw RawListing, listings chan ProcessedListing) {
+func (pkgs *Pkgs) processInfo(raw RawListing, listings chan Listing) {
 	files, err := GetFileList(raw.Data)
 	if err != nil {
 		log.Error("Failed to fetch listing", "name", raw.PkgName, "err", err)
 		return
 	}
 
-	listings <- ProcessedListing{
+	listings <- Listing{
 		PkgName:    raw.PkgName,
 		OutputName: raw.OutputName,
 		Files:      files,
@@ -206,21 +185,21 @@ func (pkgs *Pkgs) processInfo(raw RawListing, listings chan ProcessedListing) {
 }
 
 // listFromCache gets the package list from the user's cache directory.
-func listFromCache() (List, error) {
+func listFromCache() (list, error) {
 	log.Debug("Trying to find cache")
 	dir, err := os.UserCacheDir()
 	if err != nil {
 		return nil, err
 	}
 
-	path := dir + "/" + APP_NAME
+	path := dir + "/" + APP_NAME + "/lists"
 	stat, err := os.Stat(path)
 	if err != nil || !stat.IsDir() {
 		if !os.IsNotExist(err) {
 			return nil, err
 		}
 
-		if err2 := os.Mkdir(path, 0666); err2 != nil {
+		if err2 := os.MkdirAll(path, 0666); err2 != nil {
 			return nil, err2
 		}
 	}
@@ -270,7 +249,7 @@ func listFromCache() (List, error) {
 		return nil, err
 	}
 
-	result := List{}
+	result := list{}
 	if err := json.Unmarshal(data, &result); err != nil {
 		return nil, err
 	}
@@ -278,8 +257,8 @@ func listFromCache() (List, error) {
 	return result, nil
 }
 
-// fetchList fetches the package list from the reemote server.
-func fetchList() (List, error) {
+// fetchList fetches the package list from the remote server.
+func fetchList() (list, error) {
 	log.Info("Fetching pkg lists")
 
 	dir, err := os.UserCacheDir()
@@ -287,7 +266,7 @@ func fetchList() (List, error) {
 		return nil, err
 	}
 
-	path := dir + "/" + APP_NAME
+	path := dir + "/" + APP_NAME + "/lists"
 	stat, err := os.Stat(path)
 	if err != nil || !stat.IsDir() {
 		if !os.IsNotExist(err) {
@@ -325,7 +304,7 @@ func fetchList() (List, error) {
 		return nil, err
 	}
 
-	result := List{}
+	result := list{}
 	if err := json.Unmarshal(buf.Bytes(), &result); err != nil {
 		return nil, err
 	}

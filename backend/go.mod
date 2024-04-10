@@ -7,6 +7,7 @@ require (
 	github.com/charmbracelet/log v0.4.0
 	github.com/hashicorp/go-retryablehttp v0.7.5
 	github.com/labstack/echo/v4 v4.11.4
+	github.com/mattn/go-sqlite3 v1.14.22
 	github.com/tidwall/gjson v1.17.1
 	github.com/ulikunitz/xz v0.5.11
 )

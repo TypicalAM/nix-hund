@@ -1,9 +1,9 @@
 package main
 
 import (
-	"net/http"
-
+	"github.com/TypicalAM/nix-hund/db"
 	"github.com/TypicalAM/nix-hund/nixpkgs"
+	"github.com/TypicalAM/nix-hund/routes"
 	"github.com/charmbracelet/log"
 
 	"github.com/labstack/echo/v4"
@@ -20,13 +20,16 @@ func main() {
 
 	log.Info("Discovering ended", "pkgs", pkgs.Count())
 
-	if err = pkgs.CreateIndex(); err != nil {
-		log.Fatal("Creating index failed", "err", err)
+	index, err := db.NewSqlite()
+	if err != nil {
+		log.Fatal("Loading db failed", "err", err)
 	}
 
-	log.Info("Starting router")
+	cntr, err := routes.New(pkgs, index)
+	if err != nil {
+		log.Fatal("Creating controller failed", "err", err)
+	}
 
-	return
 	e := echo.New()
 	e.Use(middleware.Recover())
 	e.Use(middleware.RequestLoggerWithConfig(middleware.RequestLoggerConfig{
@@ -38,9 +41,6 @@ func main() {
 		},
 	}))
 
-	e.GET("/", func(c echo.Context) error {
-		return c.String(http.StatusOK, "Hello, World!")
-	})
-
+	e.GET("/index", cntr.Index)
 	log.Fatal(e.Start(":1323"))
 }
