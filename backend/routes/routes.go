@@ -26,7 +26,7 @@ func New(pkgs *nixpkgs.Pkgs, index db.IndexDB) (*Controller, error) {
 func (cntr *Controller) Index(c echo.Context) error {
 	totalFileCount := 0
 	totalPkgs := 0
-	for listing := range cntr.pkgs.ProcessListings(cntr.pkgs.FetchListings(cntr.pkgs.Count())) {
+	for listing := range cntr.pkgs.ProcessListings(cntr.pkgs.FetchListings(cntr.pkgs.CountDev())) {
 		if err := cntr.index.Put(listing.PkgName, listing.OutputName, "", listing.Files); err != nil {
 			log.Fatal("Indexing failed", "name", listing.PkgName, "err", err)
 		}
@@ -43,6 +43,7 @@ func (cntr *Controller) Index(c echo.Context) error {
 		)
 	}
 
+	log.Info("Indexing done")
 	return nil
 }
 

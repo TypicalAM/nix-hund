@@ -10,7 +10,7 @@ import (
 	"os/exec"
 	"slices"
 	"strings"
-	"sync/atomic"
+	"sync"
 	"time"
 
 	"github.com/charmbracelet/log"
@@ -87,6 +87,7 @@ type Listing struct {
 	PkgName    string
 	OutputName string
 	Files      []string
+	Count      int
 }
 
 // CountDev counts the development packages.
@@ -106,8 +107,8 @@ func (pkgs *Pkgs) CountDev() int {
 
 // FetchListings fetches listings for all files.
 func (pkgs *Pkgs) FetchListings(total int) chan RawListing {
-	doneCount := atomic.Int64{}
-	result := make(chan RawListing)
+	wg := sync.WaitGroup{}
+	rawListings := make(chan RawListing)
 	count := 0
 
 	for pkgName, pkg := range pkgs.List {
@@ -116,8 +117,9 @@ func (pkgs *Pkgs) FetchListings(total int) chan RawListing {
 				continue
 			}
 
+			wg.Add(1)
 			count++
-			go pkgs.fetchPackage(pkgName, sp, outname, total, &doneCount, result)
+			go pkgs.fetchPackage(pkgName, sp, outname, &wg, count, rawListings)
 		}
 
 		if count >= total {
@@ -125,19 +127,20 @@ func (pkgs *Pkgs) FetchListings(total int) chan RawListing {
 		}
 	}
 
-	return result
+	go func() {
+		wg.Wait()
+		close(rawListings)
+	}()
+
+	return rawListings
 }
 
 // fetchPackage fetches a raw file listing.
-func (pkgs *Pkgs) fetchPackage(pkgName string, sp StorePath, outname string, total int, doneCount *atomic.Int64, listings chan RawListing) {
-	data, err := sp.FetchListing(pkgs.CacheURL, pkgs.Fetcher.StandardClient())
-	doneCount.Store(doneCount.Add(1))
-	if err != nil {
-		if doneCount.Load() == int64(total) {
-			log.Info("Done fetching", "pkgs", total)
-			close(listings)
-		}
+func (pkgs *Pkgs) fetchPackage(pkgName string, sp StorePath, outname string, wg *sync.WaitGroup, count int, listings chan RawListing) {
+	defer wg.Done()
 
+	data, err := sp.FetchListing(pkgs.CacheURL, pkgs.Fetcher.StandardClient())
+	if err != nil {
 		log.Error("Failed to fetch listing", "name", pkgName, "err", err)
 		return
 	}
@@ -146,23 +149,24 @@ func (pkgs *Pkgs) fetchPackage(pkgName string, sp StorePath, outname string, tot
 		PkgName:    pkgName,
 		OutputName: outname,
 		Data:       data,
-		Count:      int(doneCount.Load()),
-	}
-
-	if doneCount.Load() == int64(total) {
-		log.Info("Done fetching", "pkgs", total)
-		close(listings)
+		Count:      count,
 	}
 }
 
 // ProcessListings processes a channel of packages into resolved file listings.
 func (pkgs *Pkgs) ProcessListings(rawPkgs chan RawListing) chan Listing {
+	wg := sync.WaitGroup{}
 	result := make(chan Listing)
+	count := 0
 
 	go func() {
 		for raw := range rawPkgs {
-			go pkgs.processInfo(raw, result)
+			wg.Add(1)
+			count++
+			go pkgs.processInfo(raw, result, &wg, count)
 		}
+
+		wg.Wait()
 		close(result)
 	}()
 
@@ -170,17 +174,15 @@ func (pkgs *Pkgs) ProcessListings(rawPkgs chan RawListing) chan Listing {
 }
 
 // processInfo resolves the raw listing info to a filelist, and saves it to disk.
-func (pkgs *Pkgs) processInfo(raw RawListing, listings chan Listing) {
-	files, err := GetFileList(raw.Data)
-	if err != nil {
-		log.Error("Failed to fetch listing", "name", raw.PkgName, "err", err)
-		return
-	}
+func (pkgs *Pkgs) processInfo(raw RawListing, listings chan Listing, wg *sync.WaitGroup, count int) {
+	defer wg.Done()
 
+	filelist := GetFileList(raw.Data)
 	listings <- Listing{
 		PkgName:    raw.PkgName,
 		OutputName: raw.OutputName,
-		Files:      files,
+		Files:      filelist,
+		Count:      count,
 	}
 }
 

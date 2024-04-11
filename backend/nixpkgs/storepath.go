@@ -8,8 +8,7 @@ import (
 	"strings"
 
 	"github.com/andybalholm/brotli"
-	/* 	"github.com/charmbracelet/log" */
-	"github.com/tidwall/gjson"
+	"github.com/bytedance/sonic"
 	"github.com/ulikunitz/xz"
 )
 
@@ -75,32 +74,38 @@ func (sp StorePath) FetchListing(url string, cli *http.Client) ([]byte, error) {
 }
 
 // GetFileList converts the binary file listing into a list of paths, for example [ /share/example ].
-func GetFileList(data []byte) ([]string, error) {
-	return listingHelper(string(data), "root", make([]string, 0)), nil
-}
+func GetFileList(data []byte) []string {
+	result := make([]string, 0)
+	root, _ := sonic.Get(data)
 
-// listingHelper traverses the package listing and resolves it to paths, for example [ /share/example ].
-func listingHelper(json string, cur string, result []string) []string {
-	switch gjson.Get(json, cur+".type").String() {
-	case "directory":
-		files := make([]string, 0)
+	queue := [][]interface{}{{"root"}}
+	for len(queue) != 0 {
+		path := queue[0]
+		queue = queue[1:]
 
-		entries := gjson.Get(json, cur+".entries")
-		entries.ForEach(func(key, value gjson.Result) bool {
-			sanitised := strings.ReplaceAll(key.String(), ".", `\.`)
-			entry := cur + ".entries." + sanitised
-			files = append(files, listingHelper(json, entry, result)...)
-			return true
-		})
+		item := root.GetByPath(path...)
+		filetype, _ := item.Get("type").String()
+		switch filetype {
+		case "directory":
+			items, _ := item.Get("entries").Map()
+			for key := range items {
+				queue = append(queue, append(path, "entries", key))
+			}
 
-		return files
+			continue
 
-	case "regular":
-		filepath := strings.ReplaceAll(strings.ReplaceAll(cur, ".entries.", "/"), `\.`, ".")
-		noPrefix := filepath[4:]
-		return append(result, noPrefix)
+		case "regular":
+			filepath := ""
+			for _, elem := range path {
+				if elem != "entries" {
+					filepath += "/" + elem.(string)
+				}
+			}
 
-	default:
-		return make([]string, 0)
+			result = append(result, filepath[5:]) // NOTE: We are cutting /root from the filepath
+			continue
+		}
 	}
+
+	return result
 }
