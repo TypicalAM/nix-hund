@@ -1,6 +1,9 @@
 package routes
 
 import (
+	"net/http"
+	"time"
+
 	"github.com/charmbracelet/log"
 
 	"github.com/TypicalAM/nix-hund/db"
@@ -26,6 +29,8 @@ func New(pkgs *nixpkgs.Pkgs, index db.IndexDB) (*Controller, error) {
 func (cntr *Controller) Index(c echo.Context) error {
 	totalFileCount := 0
 	totalPkgs := 0
+	start := time.Now()
+
 	for listing := range cntr.pkgs.ProcessListings(cntr.pkgs.FetchListings(cntr.pkgs.CountDev())) {
 		if err := cntr.index.Put(listing.PkgName, listing.OutputName, "", listing.Files); err != nil {
 			log.Fatal("Indexing failed", "name", listing.PkgName, "err", err)
@@ -43,18 +48,6 @@ func (cntr *Controller) Index(c echo.Context) error {
 		)
 	}
 
-	log.Info("Indexing done")
-	return nil
-}
-
-// wrapLogger wraps the logger and sends the log messages to the http client in a buffered response.
-type wrappedLogger struct {
-	resp *echo.Response
-}
-
-// Write implements io.Writer for log.Outputs.
-func (wl wrappedLogger) Write(p []byte) (n int, err error) {
-	n, err = wl.resp.Write(p)
-	wl.resp.Flush()
-	return n, err
+	log.Info("Indexing done", "time took", time.Now().Sub(start))
+	return c.String(http.StatusOK, "Indexing done")
 }

@@ -89,7 +89,10 @@ func GetFileList(data []byte) []string {
 		case "directory":
 			items, _ := item.Get("entries").Map()
 			for key := range items {
-				queue = append(queue, append(path, "entries", key))
+				newPath := make([]interface{}, len(path), len(path)+2)
+				copy(newPath, path)
+				newPath = append(newPath, "entries", key)
+				queue = append(queue, newPath)
 			}
 
 			continue
