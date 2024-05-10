@@ -20,12 +20,12 @@ func main() {
 
 	log.Info("Discovering ended", "pkgs", pkgs.Count())
 
-	index, err := db.NewSqlite()
+	database, err := db.New()
 	if err != nil {
 		log.Fatal("Loading db failed", "err", err)
 	}
 
-	cntr, err := routes.New(pkgs, index)
+	cntr, err := routes.New(pkgs, database)
 	if err != nil {
 		log.Fatal("Creating controller failed", "err", err)
 	}
@@ -41,6 +41,17 @@ func main() {
 		},
 	}))
 
-	e.GET("/index", cntr.Index)
+	e.POST("/register", cntr.Register)
+	e.POST("/login", cntr.Login)
+
+	indexGroup := e.Group("/pkg")
+	indexGroup.Use(middleware.JWTWithConfig(middleware.JWTConfig{
+		SigningKey:  []byte("secret"),
+		TokenLookup: "header:x-auth-token",
+	}))
+	indexGroup.GET("/index/generate", cntr.IndexGen)
+	indexGroup.GET("/query", cntr.Query)
+	indexGroup.GET("/index/list", cntr.IndexList)
+
 	log.Fatal(e.Start(":1323"))
 }

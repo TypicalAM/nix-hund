@@ -201,7 +201,7 @@ func listFromCache() (list, error) {
 			return nil, err
 		}
 
-		if err2 := os.MkdirAll(path, 0666); err2 != nil {
+		if err2 := os.MkdirAll(path, 0x755); err2 != nil {
 			return nil, err2
 		}
 	}
@@ -276,7 +276,7 @@ func fetchList() (list, error) {
 		}
 
 		fmt.Println(path)
-		if err2 := os.Mkdir(path, 0755); err2 != nil {
+		if err2 := os.Mkdir(path, 0x755); err2 != nil {
 			return nil, err2
 		}
 	}
