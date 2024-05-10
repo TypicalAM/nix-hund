@@ -13,6 +13,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/TypicalAM/nix-hund/metrics"
 	"github.com/charmbracelet/log"
 	retryhttp "github.com/hashicorp/go-retryablehttp"
 )
@@ -50,6 +51,7 @@ func New(url string) (*Pkgs, error) {
 
 	list, err := listFromCache()
 	if err == nil {
+		metrics.PackageCount.Set(float64(len(list)))
 		return &Pkgs{
 			CacheURL: url,
 			List:     list,
@@ -62,6 +64,7 @@ func New(url string) (*Pkgs, error) {
 		return nil, err
 	}
 
+	metrics.PackageCount.Set(float64(len(list)))
 	return &Pkgs{
 		CacheURL: url,
 		List:     list,
@@ -245,6 +248,7 @@ func listFromCache() (list, error) {
 		return nil, ErrNoCache
 	}
 
+	metrics.NixpkgsDate.Set(float64(dates[idx].UnixNano()))
 	latestPath := path + "/" + entries[idx].Name()
 	data, err := os.ReadFile(latestPath)
 	if err != nil {
@@ -281,7 +285,9 @@ func fetchList() (list, error) {
 		}
 	}
 
-	filename := path + "/" + time.Now().Format(time.DateTime) + ".json"
+	timestamp := time.Now()
+	filename := path + "/" + timestamp.Format(time.DateTime) + ".json"
+	metrics.NixpkgsDate.Set(float64(timestamp.UnixNano()))
 	outfile, err := os.Create(filename)
 	if err != nil {
 		return nil, err

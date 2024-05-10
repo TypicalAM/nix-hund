@@ -1,6 +1,7 @@
 package routes
 
 import (
+	"github.com/TypicalAM/nix-hund/metrics"
 	"net/http"
 	"time"
 
@@ -17,6 +18,9 @@ type RegisterUser struct {
 
 // Register registers a user.
 func (cntr *Controller) Register(c echo.Context) error {
+	metrics.RequestCount.Inc()
+	metrics.RegisterAttempts.Inc()
+
 	var user RegisterUser
 	if err := c.Bind(&user); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
@@ -42,6 +46,9 @@ func createToken(name string) (string, error) {
 
 // Login logs the user in.
 func (cntr *Controller) Login(c echo.Context) error {
+	metrics.RequestCount.Inc()
+	metrics.LoginAttempts.Inc()
+
 	testUser := db.User{}
 	if err := c.Bind(&testUser); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())

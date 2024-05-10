@@ -5,12 +5,16 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/TypicalAM/nix-hund/metrics"
 	"github.com/charmbracelet/log"
 	"github.com/labstack/echo/v4"
 )
 
 // IndexGen creates an index.
 func (cntr *Controller) IndexGen(c echo.Context) error {
+	metrics.RequestCount.Inc()
+	metrics.IndexCount.Inc()
+
 	startTime := time.Now()
 	totalFileCount := 0
 	totalPkgs := 0
@@ -25,6 +29,7 @@ func (cntr *Controller) IndexGen(c echo.Context) error {
 		totalFileCount += len(listing.Files)
 		totalPkgs++
 
+		metrics.ProcessedOutputsCount.Inc()
 		log.Info("Package",
 			"name", listing.PkgName,
 			"outname", listing.OutputName,
@@ -40,6 +45,8 @@ func (cntr *Controller) IndexGen(c echo.Context) error {
 
 // IndexList lists the available indices.
 func (cntr *Controller) IndexList(c echo.Context) error {
+	metrics.RequestCount.Inc()
+
 	indices, err := cntr.database.ListIndices()
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "Error finding indices: "+err.Error())
@@ -50,9 +57,11 @@ func (cntr *Controller) IndexList(c echo.Context) error {
 
 // Query queries for a package.
 func (cntr *Controller) Query(c echo.Context) error {
+	metrics.RequestCount.Inc()
+
 	param := c.QueryParam("query")
 	if param == "" {
-		return c.String(http.StatusBadRequest, "No query param")
+		return c.String(http.StatusBadRequest, "No query param") // TODO: errors
 	}
 
 	res, err := cntr.database.QueryPkg(param)

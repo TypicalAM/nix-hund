@@ -1,18 +1,25 @@
 package main
 
 import (
+	"flag"
+
 	"github.com/TypicalAM/nix-hund/db"
 	"github.com/TypicalAM/nix-hund/nixpkgs"
 	"github.com/TypicalAM/nix-hund/routes"
 	"github.com/charmbracelet/log"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 )
 
+var disableMetrics = flag.Bool("metrics", true, "Show metrics")
+
 const CACHE_URL = "http://cache.nixos.org"
 
 func main() {
+	flag.Parse()
+
 	pkgs, err := nixpkgs.New(CACHE_URL)
 	if err != nil {
 		log.Fatal("Loading packages failed", "err", err)
@@ -52,6 +59,10 @@ func main() {
 	indexGroup.GET("/index/generate", cntr.IndexGen)
 	indexGroup.GET("/query", cntr.Query)
 	indexGroup.GET("/index/list", cntr.IndexList)
+
+	if *disableMetrics {
+		e.GET("/metrics", echo.WrapHandler(promhttp.Handler()))
+	}
 
 	log.Fatal(e.Start(":1323"))
 }
