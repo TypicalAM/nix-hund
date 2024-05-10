@@ -1,7 +1,6 @@
 package routes
 
 import (
-	"encoding/json"
 	"net/http"
 	"time"
 
@@ -61,18 +60,13 @@ func (cntr *Controller) Query(c echo.Context) error {
 
 	param := c.QueryParam("query")
 	if param == "" {
-		return c.String(http.StatusBadRequest, "No query param") // TODO: errors
+		return echo.NewHTTPError(http.StatusBadRequest, "No query param")
 	}
 
 	res, err := cntr.database.QueryPkg(param)
 	if err != nil {
-		return c.String(http.StatusInternalServerError, "Error while fetching")
+		return echo.NewHTTPError(http.StatusInternalServerError, "Error while fetching")
 	}
 
-	data, err := json.MarshalIndent(res, "", "\t")
-	if err != nil {
-		return c.String(http.StatusInternalServerError, "Error while marshaling")
-	}
-
-	return c.String(http.StatusOK, string(data))
+	return c.JSON(http.StatusOK, res)
 }
