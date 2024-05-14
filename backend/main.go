@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"os"
 
 	"github.com/TypicalAM/nix-hund/db"
 	"github.com/TypicalAM/nix-hund/nixpkgs"
@@ -16,7 +17,7 @@ import (
 )
 
 var disableMetrics = flag.Bool("metrics", true, "Show metrics")
-var fetchChannel = flag.String("fetch", "", "Channel name for fetching data, something that can be put in `nix-env --file`. For example `channel:nixos-21.11` or a nixpkgs archive url, should be paired with --outfile")
+var fetchChannel = flag.String("fetch", "", "Channel name for fetching data, something that can be put in `nix-env --file`. For example `channel:nixos-21.11` or a nixpkgs archive url, should be paired with --out_path")
 var outpath = flag.String("out_path", "", "Output path for a dumped channel. ~/.cache/nix-hund/channels/file.json is appropriate for reading by the program")
 
 const CACHE_URL = "http://cache.nixos.org"
@@ -26,7 +27,7 @@ func main() {
 
 	if *fetchChannel != "" {
 		if *outpath == "" {
-			log.Fatal("Specified the fetch channel without an outfile, use --outfile to tell nix-hund where to put the result of the fetch")
+			log.Fatal("Specified the fetch channel without an out_path, use --out_path to tell nix-hund where to put the result of the fetch")
 		}
 
 		if err := nixpkgs.FetchChannel(*fetchChannel, *outpath); err != nil {
@@ -34,6 +35,32 @@ func main() {
 		}
 
 		return
+	}
+
+	cache, err := os.UserCacheDir()
+	if err != nil {
+		log.Fatal("Cannot get the cache directory", "err", err)
+	}
+
+	dir := cache + "/nix-hund"
+	stat, err := os.Stat(dir)
+	if err != nil {
+		if os.IsNotExist(err) {
+			if err := os.MkdirAll(dir, 0755); err != nil {
+				log.Fatal("Couldn't create directory", "err", err)
+			}
+
+			stat, err = os.Stat(dir)
+			if err != nil {
+				log.Fatal("Cannot stat the cache directory", "err", err)
+			}
+		} else {
+			log.Fatal("Cannot stat the cache directory", "err", err)
+		}
+	}
+
+	if !stat.IsDir() {
+		log.Fatal("Cache directoy exists and isn't a directory", "dir", dir)
 	}
 
 	database, err := db.New()

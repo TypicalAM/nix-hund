@@ -28,7 +28,7 @@ func AvailableChannels() ([]string, error) {
 			return nil, err
 		}
 
-		if err := os.MkdirAll(dir, 0x755); err != nil {
+		if err := os.MkdirAll(dir, 0755); err != nil {
 			log.Error("Couldn't create directory", "err", err)
 			return nil, err
 		}
