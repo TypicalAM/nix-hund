@@ -2,19 +2,20 @@ package routes
 
 import (
 	"github.com/TypicalAM/nix-hund/db"
-	"github.com/TypicalAM/nix-hund/nixpkgs"
 )
 
 // Controller manages the routes.
 type Controller struct {
-	pkgs     *nixpkgs.Pkgs
-	database *db.DB
+	cacheURL string
+	dbase    *db.DB
+	channels []string
 }
 
 // New creates a new controller.
-func New(pkgs *nixpkgs.Pkgs, database *db.DB) (*Controller, error) {
+func New(cacheURL string, database *db.DB, channels []string) (*Controller, error) {
 	return &Controller{
-		pkgs:     pkgs,
-		database: database,
+		cacheURL: cacheURL,
+		dbase:    database,
+		channels: channels,
 	}, nil
 }

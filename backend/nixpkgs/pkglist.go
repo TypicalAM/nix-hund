@@ -1,24 +1,16 @@
 package nixpkgs
 
 import (
-	"bytes"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io"
 	"os"
-	"os/exec"
-	"slices"
-	"strings"
 	"sync"
-	"time"
 
 	"github.com/TypicalAM/nix-hund/metrics"
 	"github.com/charmbracelet/log"
 	retryhttp "github.com/hashicorp/go-retryablehttp"
 )
-
-const APP_NAME = "nix-hund"
 
 var ErrNoCache = errors.New("no adequate cache")
 
@@ -42,32 +34,33 @@ type Pkgs struct {
 	Fetcher  *retryhttp.Client
 }
 
-// New reads or fetches the available packages from nixpkgs. It uses the default system channel and the cache url provided by the caller.
-func New(url string) (*Pkgs, error) {
+// New reads or fetches the available packages from nixpkgs. It uses the specified channel and the cache url provided by the caller. Use `nixpkgs.AvailableChannels()` to get available channels.
+func New(url, channel string) (*Pkgs, error) {
 	cli := retryhttp.NewClient()
 	cli.RetryMax = 5
 	cli.Backoff = retryhttp.LinearJitterBackoff
 	cli.Logger = log.New(io.Discard)
 
-	list, err := listFromCache()
-	if err == nil {
-		metrics.PackageCount.Set(float64(len(list)))
-		return &Pkgs{
-			CacheURL: url,
-			List:     list,
-			Fetcher:  cli,
-		}, nil
-	}
-
-	list, err = fetchList()
+	cache, err := os.UserCacheDir()
 	if err != nil {
 		return nil, err
 	}
 
-	metrics.PackageCount.Set(float64(len(list)))
+	dir := cache + "/nix-hund/channels/" + channel + ".json"
+	data, err := os.ReadFile(dir)
+	if err != nil {
+		return nil, err
+	}
+
+	pkgs := make(list)
+	if err := json.Unmarshal(data, &pkgs); err != nil {
+		return nil, err
+	}
+
+	metrics.PackageCount.Set(float64(len(pkgs)))
 	return &Pkgs{
 		CacheURL: url,
-		List:     list,
+		List:     pkgs,
 		Fetcher:  cli,
 	}, nil
 }
@@ -81,6 +74,8 @@ func (pkgs Pkgs) Count() int {
 type RawListing struct {
 	PkgName    string
 	OutputName string
+	OutputHash string
+	Version    string
 	Data       []byte
 	Count      int
 }
@@ -89,6 +84,8 @@ type RawListing struct {
 type Listing struct {
 	PkgName    string
 	OutputName string
+	OutputHash string
+	Version    string
 	Files      []string
 	Count      int
 }
@@ -122,7 +119,7 @@ func (pkgs *Pkgs) FetchListings(total int) chan RawListing {
 
 			wg.Add(1)
 			count++
-			go pkgs.fetchPackage(pkgName, sp, outname, &wg, count, rawListings)
+			go pkgs.fetchPackage(pkgName, sp, pkg.Version, outname, &wg, count, rawListings)
 		}
 
 		if count >= total {
@@ -139,7 +136,7 @@ func (pkgs *Pkgs) FetchListings(total int) chan RawListing {
 }
 
 // fetchPackage fetches a raw file listing.
-func (pkgs *Pkgs) fetchPackage(pkgName string, sp StorePath, outname string, wg *sync.WaitGroup, count int, listings chan RawListing) {
+func (pkgs *Pkgs) fetchPackage(pkgName string, sp StorePath, version string, outname string, wg *sync.WaitGroup, count int, listings chan RawListing) {
 	defer wg.Done()
 
 	data, err := sp.FetchListing(pkgs.CacheURL, pkgs.Fetcher.StandardClient())
@@ -151,6 +148,8 @@ func (pkgs *Pkgs) fetchPackage(pkgName string, sp StorePath, outname string, wg 
 	listings <- RawListing{
 		PkgName:    pkgName,
 		OutputName: outname,
+		OutputHash: sp.Hash(),
+		Version:    version,
 		Data:       data,
 		Count:      count,
 	}
@@ -184,139 +183,9 @@ func (pkgs *Pkgs) processInfo(raw RawListing, listings chan Listing, wg *sync.Wa
 	listings <- Listing{
 		PkgName:    raw.PkgName,
 		OutputName: raw.OutputName,
+		OutputHash: raw.OutputHash,
+		Version:    raw.Version,
 		Files:      filelist,
 		Count:      count,
 	}
-}
-
-// listFromCache gets the package list from the user's cache directory.
-func listFromCache() (list, error) {
-	log.Debug("Trying to find cache")
-	dir, err := os.UserCacheDir()
-	if err != nil {
-		return nil, err
-	}
-
-	path := dir + "/" + APP_NAME + "/lists"
-	stat, err := os.Stat(path)
-	if err != nil || !stat.IsDir() {
-		if !os.IsNotExist(err) {
-			return nil, err
-		}
-
-		if err2 := os.MkdirAll(path, 0x755); err2 != nil {
-			return nil, err2
-		}
-	}
-
-	entries, err := os.ReadDir(path)
-	if err != nil {
-		return nil, err
-	}
-
-	dates := make([]time.Time, 0, len(entries))
-	for _, entry := range entries {
-		// Expected name pattern "2006-01-02 15:04:05.json"
-		name, found := strings.CutSuffix(entry.Name(), ".json")
-		if !found {
-			return nil, errors.New("invalid file in cache")
-		}
-
-		date, err := time.Parse(time.DateTime, name)
-		if err != nil {
-			return nil, err
-		}
-
-		dates = append(dates, date)
-	}
-
-	if len(dates) == 0 {
-		return nil, ErrNoCache
-	}
-
-	maxDate := slices.MaxFunc(dates, func(a time.Time, b time.Time) int {
-		if a.After(b) {
-			return 1
-		} else if a.Equal(b) {
-			return 0
-		}
-		return -1
-	})
-
-	idx := slices.Index(dates, maxDate)
-	if dates[idx].Before(time.Now().Add(-24 * time.Hour)) {
-		return nil, ErrNoCache
-	}
-
-	metrics.NixpkgsDate.Set(float64(dates[idx].UnixNano()))
-	latestPath := path + "/" + entries[idx].Name()
-	data, err := os.ReadFile(latestPath)
-	if err != nil {
-		return nil, err
-	}
-
-	result := list{}
-	if err := json.Unmarshal(data, &result); err != nil {
-		return nil, err
-	}
-
-	return result, nil
-}
-
-// fetchList fetches the package list from the remote server.
-func fetchList() (list, error) {
-	log.Info("Fetching pkg lists")
-
-	dir, err := os.UserCacheDir()
-	if err != nil {
-		return nil, err
-	}
-
-	path := dir + "/" + APP_NAME + "/lists"
-	stat, err := os.Stat(path)
-	if err != nil || !stat.IsDir() {
-		if !os.IsNotExist(err) {
-			return nil, err
-		}
-
-		fmt.Println(path)
-		if err2 := os.Mkdir(path, 0x755); err2 != nil {
-			return nil, err2
-		}
-	}
-
-	timestamp := time.Now()
-	filename := path + "/" + timestamp.Format(time.DateTime) + ".json"
-	metrics.NixpkgsDate.Set(float64(timestamp.UnixNano()))
-	outfile, err := os.Create(filename)
-	if err != nil {
-		return nil, err
-	}
-	defer outfile.Close()
-
-	buf := &bytes.Buffer{}
-	cmd := exec.Command(
-		"nix-env",
-		"--out-path",
-		"--query",
-		"--available",
-		"--json",
-		"--arg", "config", "{ allowAliases = false; }",
-		"--argstr", "system", "x86_64-linux",
-		"--prebuilt-only",
-		"--show-trace",
-	)
-	cmd.Stdout = io.MultiWriter(outfile, buf)
-
-	if err := cmd.Run(); err != nil {
-		return nil, err
-	}
-
-	result := list{}
-	if err := json.Unmarshal(buf.Bytes(), &result); err != nil {
-		return nil, err
-	}
-
-	log.Info("Fetching done", "pkgs", len(result))
-	return result, nil
 }

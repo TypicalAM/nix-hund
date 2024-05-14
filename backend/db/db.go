@@ -2,19 +2,12 @@ package db
 
 import (
 	"database/sql"
-	"fmt"
 	"os"
-	"time"
+
+	_ "github.com/mattn/go-sqlite3"
 )
 
-// PkgResult is a package query result from the index.
-type PkgResult struct {
-	PkgName string `json:"pkg_name"`
-	Outname string `json:"out_name"`
-	Path    string `json:"path"`
-	Version string `json:"version"`
-}
-
+// DB is the database of the program. It handles users and packages.
 type DB struct {
 	db   *sql.DB
 	path string
@@ -43,54 +36,38 @@ func New() (*DB, error) {
 	}, nil
 }
 
-// IndexInfo is the short information about a previously created index, if the index was short lived, it should not be used.
-type IndexInfo struct {
-	Date        time.Time
-	OutputCount int
-}
-
-// ListIndices lists the available indices in the database.
-func (db *DB) ListIndices() ([]IndexInfo, error) {
-	rows, err := db.db.Query(`SELECT start_date, COUNT(*) FROM listings GROUP BY start_date;`)
-	if err != nil {
-		return nil, fmt.Errorf("listing indices: %w", err)
-	}
-
-	indices := make([]IndexInfo, 0)
-	for rows.Next() {
-		index := IndexInfo{}
-		if err := rows.Scan(&index.Date, &index.OutputCount); err != nil {
-			return nil, fmt.Errorf("scanning indices rows: %w", err)
-		}
-		indices = append(indices, index)
-	}
-
-	return indices, nil
-}
-
 // initialize initializes the database fields.
 func initialize(db *sql.DB) error {
 	_, err := db.Exec(`
 	CREATE TABLE IF NOT EXISTS listings (
-		start_date DATE NOT NULL, 
+		index_channel VARCHAR(255) NOT NULL,
+		index_date DATE NOT NULL, 
+		index_uuid CHAR(36) NOT NULL,
 		pkg_name VARCHAR(255) NOT NULL,
 		output_name VARCHAR(255) NOT NULL,
+		output_hash VARCHAR(255) NOT NULL,
 		version VARCHAR(50) NOT NULL,
-		path VARCHAR(255) NOT NULL,
 		fullpath VARCHAR(255) NOT NULL,
 		filename VARCHAR(255) NOT NULL,
-		PRIMARY KEY (start_date, fullpath, version, pkg_name, output_name)
+		PRIMARY KEY (pkg_name, index_uuid, output_hash, fullpath)
 	);
 
 	CREATE TABLE IF NOT EXISTS users (
     username VARCHAR(255) PRIMARY KEY NOT NULL,
     password VARCHAR(255) NOT NULL
 	);
+
+	CREATE TABLE IF NOT EXISTS users_history (
+		username VARCHAR(255) NOT NULL,
+		date DATE NOT NULL,
+		pkg_name VARCHAR(255) NOT NULL,
+		index_uuid CHAR(36) NOT NULL,
+		output_hash VARCHAR(255) NOT NULL,
+		fullpath VARCHAR(255) NOT NULL,
+		FOREIGN KEY (username) REFERENCES users(user_id),
+		FOREIGN KEY (pkg_name, index_uuid, output_hash, fullpath) REFERENCES listings(pkg_name, index_uuid, output_hash, fullpath)
+	);
 	`)
 
-	if err != nil {
-		return fmt.Errorf("creating database: %w", err)
-	}
-
-	return nil
+	return err
 }

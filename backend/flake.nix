@@ -1,5 +1,5 @@
 {
-  description = "Locate nix packages using your phone!";
+  description = "Locate nix development files easily";
 
   inputs = { nixpkgs.url = "github:NixOS/nixpkgs/nixos-23.11"; };
 
