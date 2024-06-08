@@ -2,6 +2,7 @@ package routes
 
 import (
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/TypicalAM/nix-hund/db"
@@ -77,7 +78,7 @@ func (cntr *Controller) Login(c echo.Context) error {
 func createToken(name string) (string, error) {
 	claims := &JwtUserClaims{name, jwt.RegisteredClaims{ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour * 72))}}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	t, err := token.SignedString([]byte("secret3"))
+	t, err := token.SignedString([]byte(os.Getenv("HUND_SECRET_KEY")))
 	return t, err
 }
 

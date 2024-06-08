@@ -89,24 +89,23 @@ func main() {
 		},
 	}))
 
-	jwtMiddleware := echojwt.WithConfig(echojwt.Config{
+	protected := echojwt.WithConfig(echojwt.Config{
 		NewClaimsFunc: func(c echo.Context) jwt.Claims { return new(routes.JwtUserClaims) },
-		SigningKey:    []byte("secret3"),
+		SigningKey:    []byte(os.Getenv("HUND_SECRET_KEY")),
 	})
 
 	accounts := e.Group("/account")
 	accounts.POST("/register", cntr.Register)
 	accounts.POST("/login", cntr.Login)
-	accounts.GET("/history", cntr.HistoryList, jwtMiddleware)
-	accounts.POST("/history/delete", cntr.HistoryDelete, jwtMiddleware)
-	accounts.POST("/delete", cntr.DeleteUser, jwtMiddleware)
+	accounts.GET("/history", cntr.HistoryList, protected)
+	accounts.POST("/history/delete", cntr.HistoryDelete, protected)
+	accounts.POST("/delete", cntr.DeleteUser, protected)
 
 	pkgs := e.Group("/pkg")
-	pkgs.Use(jwtMiddleware)
 	pkgs.GET("/channel", cntr.ChannelList)
 	pkgs.GET("/channel/index", cntr.IndexList)
-	pkgs.POST("/channel/index/generate", cntr.IndexGenerate)
-	pkgs.GET("/index/:id/query", cntr.IndexQuery)
+	pkgs.POST("/channel/index/generate", cntr.IndexGenerate, protected)
+	pkgs.GET("/index/:id/query", cntr.IndexQuery, protected)
 
 	if *disableMetrics {
 		e.GET("/metrics", echo.WrapHandler(promhttp.Handler()))
