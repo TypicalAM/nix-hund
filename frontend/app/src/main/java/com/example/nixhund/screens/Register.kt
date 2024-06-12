@@ -46,7 +46,7 @@ import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun Login(navHostController: NavHostController) {
+fun Register(navHostController: NavHostController) {
     val client = LoginClient()
     val scope = rememberCoroutineScope()
     var username by remember { mutableStateOf("") }
@@ -85,7 +85,7 @@ fun Login(navHostController: NavHostController) {
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Text(
-                text = "Enter username and password",
+                text = "Create a new account",
                 fontSize = 24.sp,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier
@@ -133,14 +133,14 @@ fun Login(navHostController: NavHostController) {
                 onClick = {
                     scope.launch {
                         try {
-                            val (token) = client.login(LoginInfo(username, password))
-                            Log.d("login", "Token: $token")
+                            val (token) = client.register(LoginInfo(username, password))
+                            Log.d("register", "Token: $token")
                             setPref(context, API_KEY, token)
                             setPref(context, USERNAME , username)
                             setPref(context, LOGGED_IN , true)
                             navHostController.navigate("search")
                         } catch (e: Exception) {
-                            Log.d("login", e.toString())
+                            Log.d("register", e.toString())
                             snackbarHostState.showSnackbar("An error occured when logging in")
                         }
                     }
@@ -148,7 +148,7 @@ fun Login(navHostController: NavHostController) {
                     .fillMaxWidth()
                     .padding(16.dp)
             ) {
-                Text("Log In", fontSize = 18.sp)
+                Text("Sign up", fontSize = 18.sp)
             }
         }
     }
