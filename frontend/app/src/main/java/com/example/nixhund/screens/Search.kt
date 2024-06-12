@@ -59,7 +59,7 @@ import com.example.nixhund.api.ApiClient
 import com.example.nixhund.api.IndexInfo
 import com.example.nixhund.api.PkgResult
 import com.example.nixhund.getApiKey
-import com.example.nixhund.ui.NavigationList
+import com.example.nixhund.ui.Sidebar
 import com.example.nixhund.ui.TopBarWithSearch
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
@@ -83,9 +83,7 @@ fun Search(navHostController: NavHostController, searchViewModel: SearchViewMode
         drawerState = drawerState,
         drawerContent = {
             ModalDrawerSheet {
-                Text("Drawer title", modifier = Modifier.padding(16.dp))
-                HorizontalDivider()
-                NavigationList(navHostController)
+                Sidebar(navHostController)
             }
         },
     ) {
