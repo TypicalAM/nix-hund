@@ -8,6 +8,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.nixhund.api.ApiClient
 import com.example.nixhund.api.IndexInfo
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 
 data class ChannelInfo(val name: String, val indices: List<IndexInfo>)
@@ -22,9 +23,21 @@ class SearchViewModel : ViewModel() {
 
     fun populateData(apiClient: ApiClient) {
         viewModelScope.launch {
-            val channelNames = apiClient.getChannelList().channels
+            var channelNames: List<String> = listOf()
+            try {
+                channelNames = apiClient.getChannelList().channels
+            } catch (e: Exception) {
+                Log.d("search_model", "Exception in popuplate: $e")
+                cancel()
+            }
             val channelList = channelNames.map { name ->
-                val indices = apiClient.getChannelIndices(name)
+                var indices: List<IndexInfo> = listOf()
+                try {
+                    indices = apiClient.getChannelIndices(name)
+                } catch (e: Exception) {
+                    Log.d("search_model", "Exception in popuplate: $e")
+                    cancel()
+                }
                 Log.d("search_model", "$name has ${indices.size} indices")
                 ChannelInfo(name, indices)
             }
@@ -35,11 +48,11 @@ class SearchViewModel : ViewModel() {
 
             var found = false
             for (channel in channelList) if (channel.indices.isNotEmpty()) {
-                    currentChannel = channel
-                    currentIndex = channel.indices[0]
-                    found = true
-                    break
-                }
+                currentChannel = channel
+                currentIndex = channel.indices[0]
+                found = true
+                break
+            }
 
             if (!found && channelList.isNotEmpty()) currentChannel = channelList[0]
         }

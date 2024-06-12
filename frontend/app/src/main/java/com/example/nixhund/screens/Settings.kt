@@ -67,7 +67,7 @@ fun Settings(navHostController: NavHostController) {
                 title = {},
                 navigationIcon = {
                     IconButton(onClick = {
-                        navHostController.navigate("welcome")
+                        navHostController.navigate("search")
                     }) {
                         Icon(
                             imageVector = Icons.Filled.ArrowBack,

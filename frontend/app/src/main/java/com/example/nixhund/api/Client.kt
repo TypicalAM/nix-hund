@@ -1,5 +1,8 @@
 package com.example.nixhund.api
 
+import android.annotation.SuppressLint
+import android.os.Build
+import androidx.annotation.RequiresApi
 import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
@@ -16,12 +19,17 @@ import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.Json
+import java.text.DateFormat
+import java.text.SimpleDateFormat
+import java.time.Instant
 import java.util.Date
 
 object DateSerializer : KSerializer<Date> {
+    @SuppressLint("SimpleDateFormat")
+    private val format = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSSSSSSSZ")
     override val descriptor = PrimitiveSerialDescriptor("Date", PrimitiveKind.LONG)
-    override fun serialize(encoder: Encoder, value: Date) = encoder.encodeLong(value.time)
-    override fun deserialize(decoder: Decoder): Date = Date(decoder.decodeLong())
+    override fun serialize(encoder: Encoder, value: Date) = encoder.encodeString(format.format(value))
+    override fun deserialize(decoder: Decoder): Date = format.parse(decoder.decodeString())!!
 }
 
 @Serializable
@@ -67,6 +75,7 @@ data class IndexGenerateResult(
 class ApiClient(private val apiToken: String) {
     private val baseUrl = "https://hund.piaseczny.dev"
     private val client = HttpClient(CIO) {
+        engine { requestTimeout = 0 }
         install(ContentNegotiation) {
             addDefaultResponseValidation()
             json(Json {

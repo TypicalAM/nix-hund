@@ -77,7 +77,7 @@ fun Channel(navHostController: NavHostController, searchViewModel: SearchViewMod
         topBar = {
             CenterAlignedTopAppBar(
                 title = {
-                    Text("Channel")
+                    Text("Index")
                 },
                 navigationIcon = {
                     IconButton(onClick = {
