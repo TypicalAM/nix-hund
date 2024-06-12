@@ -11,6 +11,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -76,8 +77,6 @@ import java.text.SimpleDateFormat
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun Index(navHostController: NavHostController, searchViewModel: SearchViewModel) {
-    @SuppressLint("SimpleDateFormat")
-    val dateFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSSSSSSSZ")
     val scope = rememberCoroutineScope()
     var selectedOption by remember { mutableStateOf<IndexInfo?>(null) }
     val client = ApiClient(getApiKey(LocalContext.current))
@@ -130,7 +129,7 @@ fun Index(navHostController: NavHostController, searchViewModel: SearchViewModel
                             color = Color.Black
                         )
                         Text(
-                            text = "Generation of an index can take up to 10 minutes, are you ready?",
+                            text = "Generation of an index can take up to 1 minute, are you ready?",
                             fontSize = 18.sp,
                             color = Color.Gray,
                             modifier = Modifier.padding(top = 8.dp, bottom = 32.dp)
@@ -139,8 +138,8 @@ fun Index(navHostController: NavHostController, searchViewModel: SearchViewModel
                         if (isLoading) {
                             CircularProgressIndicator(
                                 modifier = Modifier
-                                    .fillMaxSize()
-                                    .padding(16.dp),
+                                    .padding(16.dp)
+                                    .size(24.dp),
                             )
                         } else {
                             Button(
@@ -151,12 +150,14 @@ fun Index(navHostController: NavHostController, searchViewModel: SearchViewModel
                                             "Generating index for ${searchViewModel.currentChannel!!.name}"
                                         )
 
+                                        isLoading = true
                                         try {
                                             client.generateIndex(searchViewModel.currentChannel!!.name)
                                         } catch (e: Exception) {
                                             Log.d("index", "Failed to index $e")
                                             cancel()
                                         }
+                                        isLoading = false
 
                                         Log.d("index", "Generating done")
                                         searchViewModel.populateData(client)
@@ -200,8 +201,8 @@ fun Index(navHostController: NavHostController, searchViewModel: SearchViewModel
                     if (isLoading) {
                         CircularProgressIndicator(
                             modifier = Modifier
-                                .fillMaxSize()
-                                .padding(16.dp),
+                                .padding(16.dp)
+                                .size(24.dp),
                         )
                     } else {
                         Button(
