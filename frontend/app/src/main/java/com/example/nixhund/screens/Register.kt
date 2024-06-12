@@ -6,7 +6,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -34,15 +34,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-
 import androidx.navigation.NavHostController
 import com.example.nixhund.API_KEY
 import com.example.nixhund.LOGGED_IN
 import com.example.nixhund.SearchViewModel
-import com.example.nixhund.api.LoginClient
-import com.example.nixhund.api.LoginInfo
 import com.example.nixhund.USERNAME
 import com.example.nixhund.api.ApiClient
+import com.example.nixhund.api.LoginClient
+import com.example.nixhund.api.LoginInfo
 import com.example.nixhund.setPref
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
@@ -69,7 +68,7 @@ fun Register(navHostController: NavHostController, searchViewModel: SearchViewMo
                         navHostController.navigate("welcome")
                     }) {
                         Icon(
-                            imageVector = Icons.Filled.ArrowBack,
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Localized description"
                         )
                     }
@@ -146,8 +145,8 @@ fun Register(navHostController: NavHostController, searchViewModel: SearchViewMo
 
                         Log.d("register", "Token: $token")
                         setPref(context, API_KEY, token)
-                        setPref(context, USERNAME , username)
-                        setPref(context, LOGGED_IN , true)
+                        setPref(context, USERNAME, username)
+                        setPref(context, LOGGED_IN, true)
 
                         try {
                             searchViewModel.populateData(ApiClient(token))

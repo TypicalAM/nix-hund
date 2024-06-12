@@ -6,7 +6,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -69,7 +69,7 @@ fun Login(navHostController: NavHostController, searchViewModel: SearchViewModel
                         navHostController.navigate("welcome")
                     }) {
                         Icon(
-                            imageVector = Icons.Filled.ArrowBack,
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Localized description"
                         )
                     }
@@ -146,8 +146,8 @@ fun Login(navHostController: NavHostController, searchViewModel: SearchViewModel
 
                         Log.d("login", "Token: $token")
                         setPref(context, API_KEY, token)
-                        setPref(context, USERNAME , username)
-                        setPref(context, LOGGED_IN , true)
+                        setPref(context, USERNAME, username)
+                        setPref(context, LOGGED_IN, true)
 
                         try {
                             searchViewModel.populateData(ApiClient(token))

@@ -33,7 +33,6 @@ import com.example.nixhund.R
 import com.example.nixhund.getUsername
 import com.example.nixhund.setApiKey
 import com.example.nixhund.setLoggedIn
-import com.example.nixhund.setPref
 import com.example.nixhund.setUsername
 
 @Composable

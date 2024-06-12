@@ -1,4 +1,4 @@
-package com.example.nixhund
+package com.example.nixhund.activities
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -7,11 +7,11 @@ import androidx.activity.viewModels
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavHostController
-import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import androidx.navigation.navArgument
+import com.example.nixhund.SearchViewModel
+import com.example.nixhund.getLoggedIn
 import com.example.nixhund.screens.Channel
 import com.example.nixhund.screens.Detail
 import com.example.nixhund.screens.History

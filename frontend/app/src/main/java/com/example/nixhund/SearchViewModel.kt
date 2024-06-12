@@ -29,7 +29,7 @@ class SearchViewModel : ViewModel() {
             try {
                 channelNames = apiClient.getChannelList().channels
             } catch (e: Exception) {
-                Log.d("search_model", "Exception in popuplate: $e")
+                Log.d("search_model", "Exception in populate: $e")
                 cancel()
             }
             val channelList = channelNames.map { name ->
@@ -37,7 +37,7 @@ class SearchViewModel : ViewModel() {
                 try {
                     indices = apiClient.getChannelIndices(name)
                 } catch (e: Exception) {
-                    Log.d("search_model", "Exception in popuplate: $e")
+                    Log.d("search_model", "Exception in populate: $e")
                     cancel()
                 }
                 Log.d("search_model", "$name has ${indices.size} indices")

@@ -1,6 +1,5 @@
 package com.example.nixhund.screens
 
-import android.util.Log
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -14,8 +13,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material3.Button
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -37,16 +35,12 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavHostController
 import com.example.nixhund.R
 import com.example.nixhund.SearchViewModel
 import com.example.nixhund.api.ApiClient
 import com.example.nixhund.api.HistoryEntry
-import com.example.nixhund.api.PkgResult
 import com.example.nixhund.getApiKey
-import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -76,7 +70,7 @@ fun History(navHostController: NavHostController, searchViewModel: SearchViewMod
                         navHostController.navigate("search")
                     }) {
                         Icon(
-                            imageVector = Icons.Filled.ArrowBack,
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Localized description"
                         )
                     }
@@ -132,21 +126,6 @@ fun HistoryListItem(item: HistoryEntry, onClick: () -> Unit) {
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
-        }
-    }
-}
-
-class ExampleViewModel : ViewModel() {
-    var entries by mutableStateOf<List<HistoryEntry>>(listOf())
-        private set
-
-    fun loadHistoryEntries(apiClient: ApiClient) {
-        viewModelScope.launch {
-            try {
-                entries = apiClient.getHistoryList()
-            } catch (e: Exception) {
-                Log.d("history", "Failed to fetch history entries $e")
-            }
         }
     }
 }
