@@ -26,19 +26,26 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
-import com.example.nixhund.NavigationList
+import com.example.nixhund.SearchViewModel
+import com.example.nixhund.api.ApiClient
+import com.example.nixhund.getApiKey
+import com.example.nixhund.ui.NavigationList
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun Search(navHostController: NavHostController) {
+fun Search(navHostController: NavHostController, searchViewModel: SearchViewModel) {
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState())
     val snackbarHostState = remember { SnackbarHostState() }
+    val client = ApiClient(getApiKey(LocalContext.current))
+
+    if (!searchViewModel.populated) searchViewModel.populateData(client)
 
     ModalNavigationDrawer(
         drawerState = drawerState,

@@ -3,6 +3,7 @@ package com.example.nixhund
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.viewModels
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavHostController
@@ -20,26 +21,28 @@ import com.example.nixhund.screens.Welcome
 
 
 class MainActivity : ComponentActivity() {
+    private val searchViewModel: SearchViewModel by viewModels()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
             val navController = rememberNavController()
-            Navigation(navController)
+            Navigation(navController, searchViewModel)
         }
     }
 }
 
 @Composable
-fun Navigation(navController: NavHostController) {
+fun Navigation(navController: NavHostController, searchViewModel: SearchViewModel) {
     val startDestination = if (getLoggedIn(LocalContext.current)) "search" else "welcome"
     NavHost(navController = navController, startDestination = startDestination) {
-        composable(route = "search") { Search(navController) }
+        composable(route = "search") { Search(navController, searchViewModel) }
         composable(route = "settings") { Settings(navController) }
-        composable(route = "channel") { Channel(navController) }
-        composable(route = "index") { Index(navController) }
+        composable(route = "channel") { Channel(navController, searchViewModel) }
+        composable(route = "index") { Index(navController, searchViewModel) }
         composable(route = "history") { History(navController) }
         composable(route = "welcome") { Welcome(navController) }
-        composable(route = "register") { Register(navController) }
-        composable(route = "login") { Login(navController) }
+        composable(route = "register") { Register(navController, searchViewModel) }
+        composable(route = "login") { Login(navController, searchViewModel) }
     }
 }

@@ -38,15 +38,18 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import com.example.nixhund.API_KEY
 import com.example.nixhund.LOGGED_IN
-import com.example.nixhund.LoginClient
-import com.example.nixhund.LoginInfo
+import com.example.nixhund.SearchViewModel
+import com.example.nixhund.api.LoginClient
+import com.example.nixhund.api.LoginInfo
 import com.example.nixhund.USERNAME
+import com.example.nixhund.api.ApiClient
 import com.example.nixhund.setPref
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun Login(navHostController: NavHostController) {
+fun Login(navHostController: NavHostController, searchViewModel: SearchViewModel) {
     val client = LoginClient()
     val scope = rememberCoroutineScope()
     var username by remember { mutableStateOf("") }
@@ -132,17 +135,29 @@ fun Login(navHostController: NavHostController) {
             Button(
                 onClick = {
                     scope.launch {
+                        var token = ""
                         try {
-                            val (token) = client.login(LoginInfo(username, password))
-                            Log.d("login", "Token: $token")
-                            setPref(context, API_KEY, token)
-                            setPref(context, USERNAME , username)
-                            setPref(context, LOGGED_IN , true)
-                            navHostController.navigate("search")
+                            token = client.login(LoginInfo(username, password)).token
                         } catch (e: Exception) {
                             Log.d("login", e.toString())
-                            snackbarHostState.showSnackbar("An error occured when logging in")
+                            snackbarHostState.showSnackbar("An error occurred when logging in")
+                            cancel()
                         }
+
+                        Log.d("login", "Token: $token")
+                        setPref(context, API_KEY, token)
+                        setPref(context, USERNAME , username)
+                        setPref(context, LOGGED_IN , true)
+
+                        try {
+                            searchViewModel.populateData(ApiClient(token))
+                        } catch (e: Exception) {
+                            Log.d("login", e.toString())
+                            snackbarHostState.showSnackbar("An error occurred when populating channel lists")
+                            cancel()
+                        }
+
+                        navHostController.navigate("search")
                     }
                 }, shape = RectangleShape, modifier = Modifier
                     .fillMaxWidth()
