@@ -8,6 +8,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.nixhund.api.ApiClient
 import com.example.nixhund.api.IndexInfo
+import com.example.nixhund.api.PkgResult
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 
@@ -19,6 +20,7 @@ class SearchViewModel : ViewModel() {
 
     var currentChannel by mutableStateOf<ChannelInfo?>(null)
     var currentIndex by mutableStateOf<IndexInfo?>(null)
+    var currentPackage by mutableStateOf<PkgResult?>(null)
     var populated by mutableStateOf(false)
 
     fun populateData(apiClient: ApiClient) {

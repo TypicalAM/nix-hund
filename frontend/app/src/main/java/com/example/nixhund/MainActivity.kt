@@ -7,10 +7,13 @@ import androidx.activity.viewModels
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.example.nixhund.screens.Channel
+import com.example.nixhund.screens.Detail
 import com.example.nixhund.screens.History
 import com.example.nixhund.screens.Index
 import com.example.nixhund.screens.Login
@@ -44,5 +47,6 @@ fun Navigation(navController: NavHostController, searchViewModel: SearchViewMode
         composable(route = "welcome") { Welcome(navController) }
         composable(route = "register") { Register(navController, searchViewModel) }
         composable(route = "login") { Login(navController, searchViewModel) }
+        composable(route = "detail") { Detail(navController, searchViewModel) }
     }
 }
