@@ -43,7 +43,7 @@ fun Navigation(navController: NavHostController, searchViewModel: SearchViewMode
         composable(route = "settings") { Settings(navController) }
         composable(route = "channel") { Channel(navController, searchViewModel) }
         composable(route = "index") { Index(navController, searchViewModel) }
-        composable(route = "history") { History(navController) }
+        composable(route = "history") { History(navController, searchViewModel) }
         composable(route = "welcome") { Welcome(navController) }
         composable(route = "register") { Register(navController, searchViewModel) }
         composable(route = "login") { Login(navController, searchViewModel) }
