@@ -1,4 +1,4 @@
-package com.example.nixhund
+package com.example.nixhund.ui
 
 import androidx.compose.foundation.layout.Row
 import androidx.compose.material.icons.Icons
