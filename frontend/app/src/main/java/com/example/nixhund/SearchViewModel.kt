@@ -46,6 +46,7 @@ class SearchViewModel : ViewModel() {
 
             Log.d("search_model", "Populated channels with ${channels.size} entries")
             channels = channelList
+            if (populated) cancel()
             populated = true
 
             var found = false
