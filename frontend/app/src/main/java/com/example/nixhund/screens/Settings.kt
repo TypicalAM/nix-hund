@@ -12,7 +12,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
@@ -30,7 +31,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -48,7 +48,9 @@ fun Settings(navHostController: NavHostController) {
         topBar = {
             CenterAlignedTopAppBar(
                 colors = TopAppBarDefaults.topAppBarColors(),
-                title = {},
+                title = {
+                    Text(text = "Settings")
+                },
                 navigationIcon = {
                     IconButton(onClick = {
                         navHostController.navigate("search")
@@ -70,29 +72,31 @@ fun Settings(navHostController: NavHostController) {
             modifier = Modifier
                 .fillMaxSize()
                 .padding(contentPadding),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+            verticalArrangement = Arrangement.Top,
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                text = "Search Settings",
-                style = MaterialTheme.typography.labelLarge,
-                color = Color.Gray,
+                text = "Select an option:",
+                style = MaterialTheme.typography.labelMedium,
                 modifier = Modifier.padding(bottom = 16.dp)
             )
+
             ButtonWithIcon(
                 text = "Select Channel",
-                icon = Icons.Default.Settings,
+                icon = Icons.Default.Info,
                 onClick = { navHostController.navigate("channel") },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(16.dp)
             )
+
             ButtonWithIcon(
                 text = "Select Index",
-                icon = Icons.Default.Settings,
+                icon = Icons.Default.Home,
                 onClick = { navHostController.navigate("index") },
                 modifier = Modifier
-                    .padding(16.dp)
                     .fillMaxWidth()
+                    .padding(16.dp)
             )
         }
     }

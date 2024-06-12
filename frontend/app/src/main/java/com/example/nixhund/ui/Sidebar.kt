@@ -44,15 +44,15 @@ fun Sidebar(navHostController: NavHostController) {
     Column(
         modifier = Modifier
             .fillMaxHeight()
-            .width(200.dp)
-            .background(Color.LightGray)
+            .fillMaxWidth()
+            .width(400.dp)
             .padding(16.dp),
         verticalArrangement = Arrangement.SpaceBetween,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Image(
-                painter = painterResource(id = R.drawable.ic_launcher_foreground),
+                painter = painterResource(id = R.drawable.nix_snowflake),
                 contentDescription = null,
                 modifier = Modifier
                     .size(80.dp)
@@ -75,19 +75,19 @@ fun Sidebar(navHostController: NavHostController) {
                 }
             }, color = Color.Red)
         }
-        Text("Logged in as $username", color = Color.Green, fontSize = 14.sp)
+        Text("Logged in as $username", fontSize = 16.sp)
     }
 }
 
 @Composable
-fun SidebarButton(text: String, color: Color = Color.Black, onClick: () -> Unit) {
+fun SidebarButton(text: String, color: Color = Color.White, onClick: () -> Unit) {
     Button(
         onClick = onClick,
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp),
         colors = ButtonDefaults.buttonColors(),
-        shape = RoundedCornerShape(8.dp)
+        shape = RoundedCornerShape(50)
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically

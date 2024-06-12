@@ -1,6 +1,7 @@
 package com.example.nixhund.screens
 
 import android.util.Log
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -8,6 +9,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -118,7 +120,7 @@ fun Search(navHostController: NavHostController, searchViewModel: SearchViewMode
                     .fillMaxSize()
                     .padding(contentPadding),
                 verticalArrangement = Arrangement.Top,
-                horizontalAlignment = Alignment.CenterHorizontally
+                horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 if (!isSearching) {
                     if (searchViewModel.currentIndex == null) {
@@ -128,11 +130,18 @@ fun Search(navHostController: NavHostController, searchViewModel: SearchViewMode
                             modifier = Modifier.padding(16.dp)
                         )
                     } else {
-                        Text(
-                            "Press the search icon to begin searching on ${searchViewModel.currentIndex!!.id}. This index was built at ${searchViewModel.currentIndex!!.date}",
-                            fontSize = 12.sp,
-                            modifier = Modifier.padding(16.dp)
+                        Image(
+                            painter = painterResource(id = R.drawable.nix_snowflake),
+                            contentDescription = null,
+                            modifier = Modifier
+                                .size(150.dp)
+                                .padding(bottom = 32.dp)
                         )
+                        Text(text = "Index UUID: ${searchViewModel.currentIndex!!.id}", style = MaterialTheme.typography.labelSmall)
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(text = "Created Date: ${searchViewModel.currentIndex!!.date}", style = MaterialTheme.typography.labelSmall)
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(text = "Total File Count: ${searchViewModel.currentIndex!!.totalFileCount}", style = MaterialTheme.typography.labelSmall)
                     }
                 } else {
                     if (isLoading) {
