@@ -16,7 +16,7 @@ class SearchViewModel : ViewModel() {
     var channels by mutableStateOf<List<ChannelInfo>>(emptyList())
         private set
 
-    var currentChannel by mutableStateOf<String?>(null)
+    var currentChannel by mutableStateOf<ChannelInfo?>(null)
     var currentIndex by mutableStateOf<IndexInfo?>(null)
     var populated by mutableStateOf(false)
 
@@ -29,9 +29,19 @@ class SearchViewModel : ViewModel() {
                 ChannelInfo(name, indices)
             }
 
-            channels = channelList
             Log.d("search_model", "Populated channels with ${channels.size} entries")
+            channels = channelList
             populated = true
+
+            var found = false
+            for (channel in channelList) if (channel.indices.isNotEmpty()) {
+                    currentChannel = channel
+                    currentIndex = channel.indices[0]
+                    found = true
+                    break
+                }
+
+            if (!found && channelList.isNotEmpty()) currentChannel = channelList[0]
         }
     }
 }
