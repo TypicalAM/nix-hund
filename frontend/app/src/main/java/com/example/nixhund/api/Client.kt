@@ -1,4 +1,4 @@
-package com.example.nixhund
+package com.example.nixhund.api
 
 import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.HttpClient
@@ -64,88 +64,109 @@ data class IndexGenerateResult(
     @SerialName("total_file_count") val totalFileCount: Int,
 )
 
-@Serializable
-data class LoginInfo(
-    val username: String, val password: String
-)
-
-@Serializable
-data class LoginResponse(val token: String)
-
-class LoginClient {
+class ApiClient(private val apiToken: String) {
+    private val baseUrl = "https://hund.piaseczny.dev"
     private val client = HttpClient(CIO) {
         install(ContentNegotiation) {
+            addDefaultResponseValidation()
             json(Json {
                 prettyPrint = true
                 isLenient = true
                 ignoreUnknownKeys = true
             })
-            addDefaultResponseValidation()
         }
     }
-    private val baseUrl = "https://hund.piaseczny.dev"
-
-    suspend fun register(info: LoginInfo): LoginResponse {
-        return client.post("$baseUrl/account/register") {
-            contentType(ContentType.Application.Json)
-            setBody(info)
-        }.body()
-    }
-
-    suspend fun login(info: LoginInfo): LoginResponse {
-        return client.post("$baseUrl/account/login") {
-            contentType(ContentType.Application.Json)
-            setBody(info)
-        }.body()
-    }
-}
-
-class ApiClient(private val apiToken: String) {
-    private val client = HttpClient(CIO) { install(ContentNegotiation) { json() } }
-    private val baseUrl = "https://hund.piaseczny.dev"
 
     suspend fun getChannelList(): ChannelList {
-        return client.get("$baseUrl/channel") {
+        val resp = client.get("$baseUrl/pkg/channel") {
             header("Authorization", "Bearer $apiToken")
-        }.body()
+        }
+
+        if (resp.status.value > 400) {
+            val msg: String = resp.body()
+            throw Exception(msg)
+        }
+
+        return resp.body()
     }
 
-    suspend fun getChannelIndices(channelId: String): IndexInfo {
-        return client.get("$baseUrl/index") {
+    suspend fun getChannelIndices(channelId: String): List<IndexInfo> {
+        val resp = client.get("$baseUrl/pkg/channel/index") {
             header("Authorization", "Bearer $apiToken")
             url { parameters.append("channel", channelId) }
-        }.body()
+        }
+
+        if (resp.status.value > 400) {
+            val msg: String = resp.body()
+            throw Exception(msg)
+        }
+
+        return resp.body()
     }
 
     suspend fun generateIndex(channel: String): IndexGenerateResult {
-        return client.post("$baseUrl/index/generate") {
+        val resp = client.post("$baseUrl/pkg/channel/index/generate") {
             header("Authorization", "Bearer $apiToken")
             contentType(ContentType.Application.Json)
             setBody(IndexGenerateInput(channel))
-        }.body()
+        }
+
+        if (resp.status.value > 400) {
+            val msg: String = resp.body()
+            throw Exception(msg)
+        }
+
+        return resp.body()
     }
 
     suspend fun indexQuery(id: String, query: String): List<PkgResult> {
-        return client.get("$baseUrl/index/$id/query") {
+        val resp = client.get("$baseUrl/pkg/index/$id/query") {
             header("Authorization", "Bearer $apiToken")
             url { parameters.append("query", query) }
-        }.body()
+        }
+
+        if (resp.status.value > 400) {
+            val msg: String = resp.body()
+            throw Exception(msg)
+        }
+
+        return resp.body()
     }
 
     suspend fun getHistoryList(): List<HistoryEntry> {
-        return client.get("$baseUrl/account/history") {
+        val resp = client.get("$baseUrl/account/history") {
             header("Authorization", "Bearer $apiToken")
-        }.body()
+        }
+
+        if (resp.status.value > 400) {
+            val msg: String = resp.body()
+            throw Exception(msg)
+        }
+
+        return resp.body()
     }
 
     suspend fun deleteHistoryEntry(input: HistoryDeleteInput) {
-        client.post("$baseUrl/account/history/delete") {
+        val resp = client.post("$baseUrl/account/history/delete") {
             header("Authorization", "Bearer $apiToken")
             setBody(input)
+        }
+
+        if (resp.status.value > 400) {
+            val msg: String = resp.body()
+            throw Exception(msg)
         }
     }
 
     suspend fun deleteUser() {
-        client.post("$baseUrl/account/delete") { header("Authorization", "Bearer $apiToken") }
+        val resp =
+            client.post("$baseUrl/account/delete") { header("Authorization", "Bearer $apiToken") }
+
+        if (resp.status.value > 400) {
+            val msg: String = resp.body()
+            throw Exception(msg)
+        }
+
+        return resp.body()
     }
 }
