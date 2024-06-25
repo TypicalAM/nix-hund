@@ -26,7 +26,7 @@
               owner = "TypicalAM";
               repo = "nix-hund";
               rev = "v${version}";
-              hash = "sha256-vXyrZWsF6/6EGJ+cT1L0Q7h6FcP0/HFaRLjNFrzPUmU=";
+              hash = "sha256-9n/WH6Nodx3uewjtdYWWCW6Kt5uYNttm7NN599nVpmo=";
             } + "/backend";
 
           vendorHash = "sha256-v4Y6CUxTz59GX7GI8zfI7RsC24/aS0aHW6s6nQzRBkA=";
