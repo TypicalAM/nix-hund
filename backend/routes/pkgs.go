@@ -67,7 +67,7 @@ func (cntr *Controller) IndexGenerate(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "This channel isn't parsed, use /channel to get the available channels")
 	}
 
-	pkgs, err := nixpkgs.New(cntr.cacheURL, input.Channel)
+	pkgs, err := nixpkgs.New(cntr.cacheURL, input.Channel, cntr.cacheDir)
 	if err != nil {
 		log.Error("Indexing failed", "channel", input.Channel, "err", err)
 		return echo.NewHTTPError(http.StatusInternalServerError, "Getting lists failed: "+err.Error())

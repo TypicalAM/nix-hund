@@ -13,11 +13,14 @@ import (
 )
 
 // AvailableChannels returns the available channels.
-func AvailableChannels() ([]string, error) {
-	result := make([]string, 0)
-	cache, err := os.UserCacheDir()
-	if err != nil {
-		return nil, err
+func AvailableChannels(cacheDir string) ([]string, error) {
+	cache := cacheDir
+	if cache == "" {
+		userCache, err := os.UserCacheDir()
+		if err != nil {
+			return nil, err
+		}
+		cache = userCache
 	}
 
 	dir := cache + "/nix-hund/channels"
@@ -47,6 +50,8 @@ func AvailableChannels() ([]string, error) {
 		return nil, err
 	}
 
+
+	result := make([]string, 0)
 	for _, file := range files {
 		if file.Mode().IsRegular() && strings.HasSuffix(file.Name(), ".json") {
 			result = append(result, file.Name()[:len(file.Name())-5])

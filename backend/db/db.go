@@ -14,13 +14,17 @@ type DB struct {
 }
 
 // New creates a new db instance.
-func New() (*DB, error) {
-	dir, err := os.UserCacheDir()
-	if err != nil {
-		return nil, err
+func New(cacheDir string) (*DB, error) {
+	cache := cacheDir
+	if cache == "" {
+		userCache, err := os.UserCacheDir()
+		if err != nil {
+			return nil, err
+		}
+		cache = userCache
 	}
 
-	path := dir + "/nix-hund/index.db"
+	path := cache + "/nix-hund/index.db"
 	db, err := sql.Open("sqlite3", path)
 	if err != nil {
 		return nil, err

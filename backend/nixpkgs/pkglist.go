@@ -35,15 +35,19 @@ type Pkgs struct {
 }
 
 // New reads or fetches the available packages from nixpkgs. It uses the specified channel and the cache url provided by the caller. Use `nixpkgs.AvailableChannels()` to get available channels.
-func New(url, channel string) (*Pkgs, error) {
+func New(url, channel, cacheDir string) (*Pkgs, error) {
 	cli := retryhttp.NewClient()
 	cli.RetryMax = 5
 	cli.Backoff = retryhttp.LinearJitterBackoff
 	cli.Logger = log.New(io.Discard)
 
-	cache, err := os.UserCacheDir()
-	if err != nil {
-		return nil, err
+	cache := cacheDir
+	if cache == "" {
+		userCache, err := os.UserCacheDir()
+		if err != nil {
+			return nil, err
+		}
+		cache = userCache
 	}
 
 	dir := cache + "/nix-hund/channels/" + channel + ".json"

@@ -19,6 +19,7 @@ import (
 var disableMetrics = flag.Bool("metrics", true, "Show metrics")
 var fetchChannel = flag.String("fetch", "", "Channel name for fetching data, something that can be put in `nix-env --file`. For example `channel:nixos-21.11` or a nixpkgs archive url, should be paired with --out_path")
 var outpath = flag.String("out_path", "", "Output path for a dumped channel. ~/.cache/nix-hund/channels/file.json is appropriate for reading by the program")
+var cacheDir = flag.String("cache_dir", "", "Cache directory to use instead of the default one")
 
 const CACHE_URL = "http://cache.nixos.org"
 
@@ -37,9 +38,13 @@ func main() {
 		return
 	}
 
-	cache, err := os.UserCacheDir()
-	if err != nil {
-		log.Fatal("Cannot get the cache directory", "err", err)
+	cache := *cacheDir
+	if cache == "" {
+		userCache, err := os.UserCacheDir()
+		if err != nil {
+			log.Fatal("Cannot get the cache directory", "err", err)
+		}
+		cache = userCache
 	}
 
 	dir := cache + "/nix-hund"
@@ -63,17 +68,17 @@ func main() {
 		log.Fatal("Cache directoy exists and isn't a directory", "dir", dir)
 	}
 
-	database, err := db.New()
+	database, err := db.New(*cacheDir)
 	if err != nil {
 		log.Fatal("Loading db failed", "err", err)
 	}
 
-	channels, err := nixpkgs.AvailableChannels()
+	channels, err := nixpkgs.AvailableChannels(*cacheDir)
 	if err != nil {
 		log.Fatal("Couldn't get the available channels", "err", err)
 	}
 
-	cntr, err := routes.New(CACHE_URL, database, channels)
+	cntr, err := routes.New(CACHE_URL, database, channels, *cacheDir)
 	if err != nil {
 		log.Fatal("Creating controller failed", "err", err)
 	}
