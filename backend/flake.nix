@@ -7,7 +7,7 @@
   };
 
   outputs = { self, nixpkgs, flake-utils }:
-    flake-utils.lib.eachDefaultSystem  (system:
+    flake-utils.lib.eachDefaultSystem (system:
       let pkgs = import nixpkgs { inherit system; };
       in with pkgs; rec {
         # Development shell
@@ -19,14 +19,15 @@
         # Runtime package
         packages.nix-hund = pkgs.buildGoModule rec {
           pname = "nix-hund";
-          version = "0.1";
+          version = "0.2";
 
-          src = pkgs.fetchFromGitHub {
-            owner = "TypicalAM";
-            repo = "nix-hund";
-            rev = "v${version}";
-            hash = "sha256-vXyrZWsF6/6EGJ+cT1L0Q7h6FcP0/HFaRLjNFrzPUmU=";
-          } + "/backend";
+          src = pkgs.fetchFromGitHub
+            {
+              owner = "TypicalAM";
+              repo = "nix-hund";
+              rev = "v${version}";
+              hash = "sha256-vXyrZWsF6/6EGJ+cT1L0Q7h6FcP0/HFaRLjNFrzPUmU=";
+            } + "/backend";
 
           vendorHash = "sha256-v4Y6CUxTz59GX7GI8zfI7RsC24/aS0aHW6s6nQzRBkA=";
 
